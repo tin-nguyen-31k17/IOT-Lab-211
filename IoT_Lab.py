@@ -11,7 +11,7 @@ AIO_KEY = ""
 
 def connected(client):
     print("Ket noi thanh cong....")
-    client.subscrive(AIO_FEED_ID)
+    client.subscrive(feed)
 
 def subscribe(client, userdata, mid, granted_qos):
     print("Subscribe thanh cong...")
@@ -21,7 +21,17 @@ def disconnected(client):
     sys.exit(1)
 
 def message(client, feed_id, payload):
-    priant("Nhan di lieu: " + payload)
+    priant("Nhan du lieu: " + payload)
+    if isMicrobitConnected:
+        ser.write((str(payload) + '#').encode())
+
+client = MQTTClient(AIO_USERNAME, AIO_KEY)
+client.on_connect = connected
+client.on_disconnect = disconnected
+client.on_message = message 
+client.on_subscribe = subscribe 
+client.connect()
+client.loop_background()
 
 def getPort():
     ports = serial.tools.list_ports.comports()
