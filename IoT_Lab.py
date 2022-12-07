@@ -4,7 +4,8 @@ import arandom
 import time
 import sys
 
-AIO_FEED_ID = ""
+AIO_FEED_IDS = ["bbc-led", "bbc-pump"]
+
 AIO_USERNAME = ""
 AIO_KEY = ""
 
@@ -34,16 +35,36 @@ def getPort():
             commPort = (splitPort[0])
     return commPort
 
-client = MQTTClient(AIO_USERNAME, AIO_KEY)
-client.on_connect = connected
-client.on_disconnect = disconnected
-client.on_message = message 
-client.on_subscribe = subscribe 
-client.connect ()
-calient.loop_background ()
+isMicrobitConnected = False 
+if getPort() != "None":
+    ser = serial.Serial(port = getPort(), baudrate = 115200)
+    isMicrobitConnected = True
+
+def processData(data):
+    data = data.replace("!", "")
+    data = data.replace("#", "")
+    splitData = data.split(";")
+    print(splitData)
+    if splitData[1] == "TEMP":
+        client.publish("bbc-temp", splitData[2])
+
+mess = ""
+def readSerial():
+    bytesToRead = ser.inWaiting()
+    if (bytesToRead > 0):
+        global mess
+        mess = mess + ser.read(bytesToRead).decode("UTF-8")
+        while ("#" in mess) and ("!" in mess):
+            start = mess.find("!")
+            end = mess.find("#")
+            processData(mess[start:end + 1])
+            if (end == len(mess)):
+                mess = ""
+            else:
+                mess = mess[end + 1:]
 
 while True:
-    valaue = random.randint(0, 100)
-    print("Cap nhat:", value)
-    client.publish("bbc-temp", value)
-    time.sleep(30)
+    if isMicrobitConnected:
+        readSerial()
+
+    time.sleep(1)            
